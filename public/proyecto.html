@@ -3,7 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Seguimiento de Oleadas</title>
+<title>Gestión de Iniciativas</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" type="image/png" href="/icon.png">
+<link rel="apple-touch-icon" href="/icon.png">
+<meta name="theme-color" content="#7C3AED">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Iniciativas">
 <style>
   :root {
     --bg: #F7F6F3; --surface: #FFFFFF; --border: #E2DFD8; --border-strong: #C8C4BB;
@@ -11,7 +18,6 @@
     --accent: #2D5BE3; --accent-light: #EEF2FD;
     --font: 'Inter', system-ui, sans-serif; --mono: 'JetBrains Mono', 'Fira Mono', monospace;
     --s-pendiente-bg: #FEF3C7; --s-pendiente-text: #92400E;
-    --s-tercero-bg: #EDE9FE; --s-tercero-text: #5B21B6;
     --s-en-curso-bg: #DBEAFE; --s-en-curso-text: #1E40AF;
     --s-hecho-bg: #D1FAE5; --s-hecho-text: #065F46;
     --s-bloqueado-bg: #FEE2E2; --s-bloqueado-text: #991B1B;
@@ -21,7 +27,6 @@
 
   .layout { max-width: 960px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
 
-  /* Header */
   .header { margin-bottom: 2rem; }
   .header-top { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: .25rem; }
   .header-left { display: flex; align-items: baseline; gap: 12px; }
@@ -35,28 +40,29 @@
   .saving-indicator.visible { opacity: 1; }
   .header-sub { font-size: 13px; color: var(--text-secondary); }
 
-  /* Summary */
   .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 2rem; }
   .sum-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: .75rem 1rem; }
   .sum-label { font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px; }
   .sum-value { font-size: 26px; font-weight: 600; font-family: var(--mono); }
-  .sum-card.tercero .sum-value { color: #5B21B6; }
+  .sum-card.pendiente .sum-value { color: #D97706; }
   .sum-card.en-curso .sum-value { color: #1E40AF; }
   .sum-card.bloqueado .sum-value { color: #991B1B; }
   .sum-card.hecho .sum-value { color: #065F46; }
 
-  /* Pending */
   .pending-section { margin-bottom: 2rem; }
   .section-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--text-tertiary); margin-bottom: .75rem; display: flex; align-items: center; gap: 8px; }
   .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
   .pending-list { display: flex; flex-direction: column; gap: 6px; }
   .pending-item { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: .6rem 1rem; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
   .pending-item:hover { border-color: var(--border-strong); }
+  .pending-item .status { width: 140px; text-align: center; flex-shrink: 0; }
   .pi-desc { flex: 1; font-size: 13px; min-width: 160px; }
-  .pi-wave { font-size: 11px; color: var(--text-tertiary); font-family: var(--mono); white-space: nowrap; }
+  .pi-wave { display: flex; gap: 5px; align-items: center; flex-shrink: 0; }
+  .pi-chip { font-size: 11px; font-family: var(--mono); font-weight: 600; white-space: nowrap; border-radius: 4px; padding: 1px 7px; }
+  .pi-chip.inicia { background: #EEF2FD; color: #2D5BE3; }
+  .pi-chip.sist   { background: #F3F4F6; color: #374151; border: 1px solid #E5E7EB; }
   .pi-person { font-size: 12px; color: var(--text-secondary); }
 
-  /* Sistemas */
   .sistema-block { margin-bottom: 1.5rem; }
   .sistema-header { display: flex; align-items: center; gap: 10px; margin-bottom: .75rem; cursor: pointer; user-select: none; }
   .sistema-name { font-size: 13px; font-weight: 600; font-family: var(--mono); letter-spacing: .04em; }
@@ -64,17 +70,15 @@
   .sistema-toggle { font-size: 12px; color: var(--text-tertiary); margin-left: auto; transition: transform .2s; }
   .sistema-toggle.open { transform: rotate(180deg); }
 
-  /* Waves */
-  .wave-block { border: 1px solid var(--border); border-radius: 8px; background: var(--surface); margin-bottom: 8px; overflow: hidden; }
-  .wave-header { display: flex; align-items: center; gap: 10px; padding: .6rem .9rem; cursor: pointer; user-select: none; background: var(--surface); }
-  .wave-header:hover { background: var(--bg); }
-  .wave-label { font-size: 12px; font-weight: 600; font-family: var(--mono); color: var(--text-secondary); }
-  .wave-toggle { font-size: 11px; color: var(--text-tertiary); margin-left: auto; }
-  .wave-stats { display: flex; gap: 6px; flex-wrap: wrap; }
-  .wave-body { padding: .75rem .9rem; border-top: 1px solid var(--border); display: none; }
-  .wave-body.open { display: block; }
+  .inicia-block { border: 1px solid var(--border); border-radius: 8px; background: var(--surface); margin-bottom: 8px; overflow: hidden; }
+  .inicia-header { display: flex; align-items: center; gap: 10px; padding: .6rem .9rem; cursor: pointer; user-select: none; background: var(--surface); }
+  .inicia-header:hover { background: var(--bg); }
+  .inicia-label { font-size: 12px; font-weight: 600; font-family: var(--mono); color: var(--text-secondary); }
+  .inicia-toggle { font-size: 11px; color: var(--text-tertiary); margin-left: auto; }
+  .inicia-stats { display: flex; gap: 6px; flex-wrap: wrap; }
+  .inicia-body { padding: .75rem .9rem; border-top: 1px solid var(--border); display: none; }
+  .inicia-body.open { display: block; }
 
-  /* Tasks */
   .task-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: start; padding: .5rem 0; border-bottom: 1px solid var(--border); }
   .task-row:last-child { border-bottom: none; padding-bottom: 0; }
   .task-main { display: flex; flex-direction: column; gap: 4px; }
@@ -85,15 +89,14 @@
   .task-meta { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-top: 4px; }
   .task-person { font-size: 11px; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 1px 7px; color: var(--text-secondary); }
   .task-right { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+  .task-actions { display: flex; flex-direction: row; gap: 4px; align-items: center; }
 
-  /* Status */
   .status { font-size: 11px; font-weight: 600; border-radius: 4px; padding: 2px 8px; white-space: nowrap; cursor: pointer; border: none; font-family: var(--font); }
-  .status.tercero   { background: var(--s-tercero-bg);  color: var(--s-tercero-text); }
+  .status.pendiente { background: var(--s-pendiente-bg); color: var(--s-pendiente-text); }
   .status.en-curso  { background: var(--s-en-curso-bg); color: var(--s-en-curso-text); }
   .status.hecho     { background: var(--s-hecho-bg);    color: var(--s-hecho-text); }
   .status.bloqueado { background: var(--s-bloqueado-bg);color: var(--s-bloqueado-text); }
 
-  /* Forms */
   .add-task-btn { font-size: 12px; color: var(--text-tertiary); background: none; border: 1px dashed var(--border); border-radius: 6px; padding: 5px 12px; cursor: pointer; width: 100%; text-align: left; margin-top: 8px; }
   .add-task-btn:hover { border-color: var(--border-strong); color: var(--text-secondary); background: var(--bg); }
   .inline-form { background: var(--bg); border-radius: 6px; padding: .75rem; margin-top: 8px; display: flex; flex-direction: column; gap: 8px; }
@@ -113,16 +116,19 @@
   .btn-save:hover { opacity: .88; }
   .btn-cancel { background: none; border: 1px solid var(--border-strong); border-radius: 6px; padding: 5px 12px; font-size: 13px; cursor: pointer; color: var(--text-secondary); font-family: var(--font); }
 
-  .add-wave-btn { font-size: 12px; color: var(--text-tertiary); background: none; border: 1px dashed var(--border); border-radius: 6px; padding: 4px 12px; cursor: pointer; margin-bottom: 1.5rem; }
-  .add-wave-btn:hover { border-color: var(--border-strong); color: var(--text-secondary); }
+  .add-inicia-btn { font-size: 12px; color: var(--text-tertiary); background: none; border: 1px dashed var(--border); border-radius: 6px; padding: 4px 12px; cursor: pointer; margin-bottom: 1.5rem; }
+  .add-inicia-btn:hover { border-color: var(--border-strong); color: var(--text-secondary); }
   .add-sistema-btn { font-size: 12px; color: var(--accent); background: var(--accent-light); border: none; border-radius: 6px; padding: 5px 14px; cursor: pointer; margin-bottom: 2rem; font-weight: 500; }
-  .wave-inline-form { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; flex-wrap: wrap; padding: .5rem .75rem; background: var(--bg); border-radius: 6px; border: 1px solid var(--border); }
-  .wave-inline-form input { font-size: 13px; font-family: var(--font); border: 1px solid var(--border-strong); border-radius: 6px; padding: 4px 9px; background: var(--surface); color: var(--text); }
-  .empty-wave { font-size: 13px; color: var(--text-tertiary); font-style: italic; padding: .25rem 0; }
-  .del-btn { font-size: 11px; color: var(--text-tertiary); background: none; border: none; cursor: pointer; padding: 2px 4px; border-radius: 4px; }
-  .del-btn:hover { background: var(--s-bloqueado-bg); color: var(--s-bloqueado-text); }
+  .inicia-inline-form { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; flex-wrap: wrap; padding: .5rem .75rem; background: var(--bg); border-radius: 6px; border: 1px solid var(--border); }
+  .inicia-inline-form input { font-size: 13px; font-family: var(--font); border: 1px solid var(--border-strong); border-radius: 6px; padding: 4px 9px; background: var(--surface); color: var(--text); }
+  .empty-inicia { font-size: 13px; color: var(--text-tertiary); font-style: italic; padding: .25rem 0; }
+  .del-btn { font-size: 13px; color: #fff; background: #EF4444; border: none; cursor: pointer; padding: 3px 8px; border-radius: 5px; line-height: 1; }
+  .del-btn:hover { background: #DC2626; }
+  .edit-btn { font-size: 13px; color: #fff; background: #6366F1; border: none; cursor: pointer; padding: 3px 8px; border-radius: 5px; line-height: 1; }
+  .edit-btn:hover { background: #4F46E5; }
+  .task-edit-form { background: var(--bg); border: 1px solid var(--accent); border-radius: 8px; padding: .75rem; margin: 6px 0; display: flex; flex-direction: column; gap: 8px; }
+  .task-edit-form .form-row select.f-dest { flex: 1; min-width: 180px; font-size: 12px; }
 
-  /* Toast */
   #toast { position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%); background: #1A1916; color: #fff; font-size: 13px; padding: 8px 16px; border-radius: 8px; pointer-events: none; opacity: 0; transition: opacity .2s; z-index: 1000; }
   #toast.show { opacity: 1; }
   #toast.error { background: #991B1B; }
@@ -130,8 +136,8 @@
   #loading-overlay { display: flex; align-items: center; justify-content: center; min-height: 50vh; font-size: 13px; color: var(--text-tertiary); font-style: italic; }
 
   @media print {
-    .add-task-btn, .add-wave-btn, .add-sistema-btn, .inline-form, .wave-inline-form, .del-btn, .form-actions, .back-btn { display: none !important; }
-    .wave-body { display: block !important; }
+    .add-task-btn, .add-inicia-btn, .add-sistema-btn, .inline-form, .inicia-inline-form, .del-btn, .form-actions, .back-btn { display: none !important; }
+    .inicia-body { display: block !important; }
   }
 </style>
 </head>
@@ -151,11 +157,11 @@
         <span class="header-meta" id="last-updated"></span>
       </div>
     </div>
-    <div class="header-sub">Seguimiento de desarrollo por oleadas</div>
+    <div class="header-sub">Seguimiento de desarrollo por iniciativas</div>
   </div>
 
   <div class="summary">
-    <div class="sum-card tercero"><div class="sum-label">Esperando tercero</div><div class="sum-value" id="cnt-tercero">0</div></div>
+    <div class="sum-card pendiente"><div class="sum-label">Pendiente</div><div class="sum-value" id="cnt-pendiente">0</div></div>
     <div class="sum-card en-curso"><div class="sum-label">En curso</div><div class="sum-value" id="cnt-en-curso">0</div></div>
     <div class="sum-card bloqueado"><div class="sum-label">Bloqueado</div><div class="sum-value" id="cnt-bloqueado">0</div></div>
     <div class="sum-card hecho"><div class="sum-label">Hecho</div><div class="sum-value" id="cnt-hecho">0</div></div>
@@ -166,7 +172,7 @@
     <div class="pending-list" id="pending-list"></div>
   </div>
 
-  <div class="section-title">Detalle por sistema y oleada</div>
+  <div class="section-title">Detalle por sistema e iniciativa</div>
   <div id="sistemas-container"></div>
   <button class="add-sistema-btn" id="add-sistema-btn">+ Añadir sistema</button>
 </div>
@@ -176,40 +182,37 @@
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 
 <script>
-// ── REEMPLAZA ESTO CON TU CONFIG DE FIREBASE ──────────────────────────────
 const firebaseConfig = {
-  apiKey: "TU_API_KEY",
-  authDomain: "TU_PROJECT_ID.firebaseapp.com",
-  projectId: "TU_PROJECT_ID",
-  storageBucket: "TU_PROJECT_ID.appspot.com",
-  messagingSenderId: "TU_SENDER_ID",
-  appId: "TU_APP_ID"
+  apiKey: "AIzaSyCdmEIoDpZ_C9iJPLBrsTRpF8rcV3ad_7I",
+  authDomain: "gestion-tareas-6a390.firebaseapp.com",
+  projectId: "gestion-tareas-6a390",
+  storageBucket: "gestion-tareas-6a390.firebasestorage.app",
+  messagingSenderId: "943514904599",
+  appId: "1:943514904599:web:6f65d94a546f47fd50d452",
+  databaseURL: "https://gestion-tareas-6a390-default-rtdb.europe-west1.firebasedatabase.app"
 };
-// ──────────────────────────────────────────────────────────────────────────
 
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
-const db = firebase.firestore();
+const db = firebase.database();
 
-const STATUS_ORDER = ['tercero', 'en-curso', 'bloqueado', 'hecho'];
+const STATUS_ORDER = ['pendiente', 'en-curso', 'bloqueado', 'hecho'];
 
 function statusLabel(s) {
-  return { tercero: 'Esperando tercero', 'en-curso': 'En curso', hecho: 'Hecho', bloqueado: 'Bloqueado' }[s] || s;
+  return { pendiente: 'Pendiente', 'en-curso': 'En curso', hecho: 'Hecho', bloqueado: 'Bloqueado' }[s] || s;
 }
 
 function escHtml(s) {
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// ── Query params ───────────────────────────────────────────────────────────
 const params = new URLSearchParams(location.search);
 const PROJECT_ID = params.get('id');
 if (!PROJECT_ID) { location.href = 'index.html'; }
 
-// ── Saving indicator ───────────────────────────────────────────────────────
 let savingCount = 0;
 function startSaving() {
   savingCount++;
@@ -224,7 +227,6 @@ function doneSaving() {
   }
 }
 
-// ── Toast ──────────────────────────────────────────────────────────────────
 let toastTimer;
 function showToast(msg, isError = false) {
   const el = document.getElementById('toast');
@@ -234,130 +236,117 @@ function showToast(msg, isError = false) {
   toastTimer = setTimeout(() => el.className = '', 4000);
 }
 
-// ── In-memory state (rebuilt from onSnapshot) ──────────────────────────────
-// state = { projectName, sistemas: [{ id, name, order, open, oleadas: [{ id, name, order, open, tasks: [{ id, ...fields }] }] }] }
 let state = { projectName: '', sistemas: [] };
-let projectRef;
-let unsubListeners = [];
+let uid;
+let projectPath;
 
-// ── Auth guard ─────────────────────────────────────────────────────────────
 auth.onAuthStateChanged(user => {
   if (!user) { location.href = 'index.html'; return; }
-  initProject(user);
+  uid = user.uid;
+  projectPath = `projects/${uid}/${PROJECT_ID}`;
+  initProject();
 });
 
-async function initProject(user) {
-  projectRef = db.collection('projects').doc(PROJECT_ID);
-  const snap = await projectRef.get();
-  if (!snap.exists || snap.data().ownerUid !== user.uid) {
-    location.href = 'index.html'; return;
+async function initProject() {
+  try {
+    const snap = await db.ref(projectPath).once('value');
+    if (!snap.exists()) { location.href = 'index.html'; return; }
+    state.projectName = snap.val().name || '';
+    document.getElementById('project-name').textContent = state.projectName;
+    document.getElementById('loading-overlay').style.display = 'none';
+    document.getElementById('main-layout').style.display = 'block';
+    subscribeToProject();
+  } catch(e) {
+    document.getElementById('loading-overlay').textContent = 'Error al cargar: ' + e.message;
   }
-  state.projectName = snap.data().name;
-  document.getElementById('project-name').textContent = state.projectName;
-  document.getElementById('loading-overlay').style.display = 'none';
-  document.getElementById('main-layout').style.display = 'block';
-  subscribeToSistemas();
 }
 
-// ── Real-time listener ─────────────────────────────────────────────────────
-function subscribeToSistemas() {
-  const unsub = projectRef.collection('sistemas').orderBy('order').onSnapshot(async snap => {
-    // Rebuild sistemas array
-    const newSistemas = [];
-    for (const doc of snap.docs) {
-      const d = doc.data();
-      const existing = state.sistemas.find(s => s.id === doc.id);
-      newSistemas.push({
-        id: doc.id,
-        name: d.name,
-        order: d.order,
-        open: d.open,
-        oleadas: existing ? existing.oleadas : []
-      });
-    }
-    state.sistemas = newSistemas;
-
-    // Subscribe oleadas for each sistema
-    unsubListeners.forEach(u => u());
-    unsubListeners = [];
-    for (const sist of state.sistemas) {
-      const u = projectRef.collection('sistemas').doc(sist.id)
-        .collection('oleadas').orderBy('order')
-        .onSnapshot(async oleaSnap => {
-          const newOleadas = [];
-          for (const oleaDoc of oleaSnap.docs) {
-            const od = oleaDoc.data();
-            const existingO = sist.oleadas.find(o => o.id === oleaDoc.id);
-            newOleadas.push({
-              id: oleaDoc.id,
-              name: od.name,
-              order: od.order,
-              open: od.open,
-              tasks: existingO ? existingO.tasks : []
-            });
+function subscribeToProject() {
+  db.ref(projectPath).on('value', snap => {
+    const data = snap.val();
+    if (!data) { location.href = 'index.html'; return; }
+    state.projectName = data.name || '';
+    state.sistemas = [];
+    if (data.sistemas) {
+      for (const [sistId, sist] of Object.entries(data.sistemas)) {
+        if (!sist) continue;
+        const sistObj = { id: sistId, name: sist.name || '', order: sist.order ?? 0, open: sist.open ?? true, iniciativas: [] };
+        if (sist.iniciativas) {
+          for (const [inicId, inic] of Object.entries(sist.iniciativas)) {
+            if (!inic) continue;
+            const inicObj = { id: inicId, name: inic.name || '', order: inic.order ?? 0, open: inic.open ?? true, tasks: [] };
+            if (inic.tasks) {
+              for (const [taskId, task] of Object.entries(inic.tasks)) {
+                if (!task) continue;
+                inicObj.tasks.push({ id: taskId, desc: task.desc || '', ticket: task.ticket || '', person: task.person || '', status: task.status || 'en-curso', note: task.note || '', order: task.order ?? 0 });
+              }
+              inicObj.tasks.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+            }
+            sistObj.iniciativas.push(inicObj);
           }
-          sist.oleadas = newOleadas;
-
-          // Subscribe tasks for each oleada
-          for (const olea of sist.oleadas) {
-            const tu = projectRef.collection('sistemas').doc(sist.id)
-              .collection('oleadas').doc(olea.id)
-              .collection('tasks').orderBy('order')
-              .onSnapshot(taskSnap => {
-                olea.tasks = taskSnap.docs.map(td => ({ id: td.id, ...td.data() }));
-                renderAll();
-              }, err => showToast('Error cargando tareas: ' + err.message, true));
-            unsubListeners.push(tu);
-          }
-          renderAll();
-        }, err => showToast('Error cargando oleadas: ' + err.message, true));
-      unsubListeners.push(u);
+          sistObj.iniciativas.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+        }
+        state.sistemas.push(sistObj);
+      }
+      state.sistemas.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
     }
     renderAll();
-  }, err => showToast('Error cargando sistemas: ' + err.message, true));
+  }, err => showToast('Error cargando datos: ' + err.message, true));
 }
 
-// ── Render ─────────────────────────────────────────────────────────────────
-function renderAll() {
-  const allTasks = state.sistemas.flatMap(s => s.oleadas.flatMap(o => o.tasks));
+// Path helpers
+function pSist(sistId) { return `${projectPath}/sistemas/${sistId}`; }
+function pInic(sistId, inicId) { return `${pSist(sistId)}/iniciativas/${inicId}`; }
+function pTask(sistId, inicId, taskId) { return `${pInic(sistId, inicId)}/tasks/${taskId}`; }
 
-  // Counts
-  ['tercero','en-curso','bloqueado','hecho'].forEach(st => {
+async function writeData(path, data) {
+  startSaving();
+  try {
+    await db.ref(path).update(data);
+    doneSaving();
+  } catch(e) {
+    doneSaving();
+    showToast('Error al guardar: ' + e.message, true);
+  }
+}
+
+function renderAll() {
+  const allTasks = state.sistemas.flatMap(s => s.iniciativas.flatMap(i => i.tasks));
+
+  ['pendiente','en-curso','bloqueado','hecho'].forEach(st => {
     document.getElementById('cnt-' + st).textContent = allTasks.filter(t => t.status === st).length;
   });
 
-  // Pending list
   const pendingList = document.getElementById('pending-list');
-  const attention = allTasks.filter(t => t.status !== 'hecho');
+  const attention = allTasks.filter(t => t.status === 'pendiente' || t.status === 'bloqueado');
   if (attention.length === 0) {
     pendingList.innerHTML = '<div style="font-size:13px;color:var(--text-tertiary);font-style:italic;padding:.5rem 0">Todo al día ✓</div>';
   } else {
     pendingList.innerHTML = attention.map(t => {
-      const sist = state.sistemas.find(s => s.oleadas.some(o => o.tasks.some(x => x.id === t.id)));
-      const olea = sist?.oleadas.find(o => o.tasks.some(x => x.id === t.id));
+      const sist = state.sistemas.find(s => s.iniciativas.some(i => i.tasks.some(x => x.id === t.id)));
+      const inic = sist?.iniciativas.find(i => i.tasks.some(x => x.id === t.id));
       return `<div class="pending-item">
-        <button class="status ${t.status}" onclick="cyclePendingStatus('${escHtml(sist.id)}','${escHtml(olea.id)}','${t.id}')">${statusLabel(t.status)}</button>
-        <span class="pi-desc">${escHtml(t.desc)}${t.ticket ? ' <span style="font-family:var(--mono);font-size:11px;color:var(--text-tertiary)">#'+escHtml(t.ticket)+'</span>' : ''}</span>
-        <span class="pi-wave">${escHtml(olea?.name||'')} · ${escHtml(sist?.name||'')}</span>
+        <button class="status ${t.status}" onclick="cycleStatus('${escHtml(sist.id)}','${escHtml(inic.id)}','${t.id}')">${statusLabel(t.status)}</button>
+        <span class="pi-desc">${escHtml(t.desc)}${t.ticket ? ' <span style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--text)">#'+escHtml(t.ticket)+'</span>' : ''}</span>
+        <span class="pi-wave"><span class="pi-chip inicia">${escHtml(inic?.name||'')}</span><span class="pi-chip sist">${escHtml(sist?.name||'')}</span></span>
         ${t.person ? '<span class="pi-person">↳ ' + escHtml(t.person) + '</span>' : ''}
       </div>`;
     }).join('');
   }
 
-  // Sistemas
   const container = document.getElementById('sistemas-container');
   container.innerHTML = state.sistemas.map(s => {
-    const allS = s.oleadas.flatMap(o => o.tasks);
+    const allS = s.iniciativas.flatMap(i => i.tasks);
     const openTasks = allS.filter(t => t.status !== 'hecho').length;
-    const oleadasHtml = s.oleadas.map(o => {
-      const counts = { tercero: 0, 'en-curso': 0, bloqueado: 0, hecho: 0 };
-      o.tasks.forEach(t => { if (counts[t.status] !== undefined) counts[t.status]++; });
+    const inicHtml = s.iniciativas.map(i => {
+      const counts = { pendiente: 0, 'en-curso': 0, bloqueado: 0, hecho: 0 };
+      i.tasks.forEach(t => { if (counts[t.status] !== undefined) counts[t.status]++; });
       const statsHtml = Object.entries(counts).filter(([,v]) => v > 0)
         .map(([k,v]) => `<span class="status ${k}" style="font-size:10px">${v} ${statusLabel(k)}</span>`).join('');
-      const tasksHtml = o.tasks.length === 0
-        ? '<div class="empty-wave">Sin tareas aún</div>'
-        : o.tasks.map(t => `
-          <div class="task-row">
+      const tasksHtml = i.tasks.length === 0
+        ? '<div class="empty-inicia">Sin tareas aún</div>'
+        : i.tasks.map(t => `
+          <div class="task-row" id="trow-${s.id}-${i.id}-${t.id}">
             <div class="task-main">
               <span class="task-desc ${t.status === 'hecho' ? 'hecho' : ''}">${escHtml(t.desc)}</span>
               ${t.ticket ? '<span class="task-ticket">#' + escHtml(t.ticket) + '</span>' : ''}
@@ -367,20 +356,23 @@ function renderAll() {
               </div>
             </div>
             <div class="task-right">
-              <button class="status ${t.status}" onclick="cycleStatus('${escHtml(s.id)}','${escHtml(o.id)}','${t.id}')" title="Haz clic para cambiar estado">${statusLabel(t.status)}</button>
-              <button class="del-btn" onclick="deleteTask('${escHtml(s.id)}','${escHtml(o.id)}','${t.id}')" title="Eliminar">×</button>
+              <button class="status ${t.status}" onclick="cycleStatus('${escHtml(s.id)}','${escHtml(i.id)}','${t.id}')" title="Haz clic para cambiar estado">${statusLabel(t.status)}</button>
+              <div class="task-actions">
+                <button class="edit-btn" onclick="showEditTask('${escHtml(s.id)}','${escHtml(i.id)}','${t.id}')" title="Editar">✎</button>
+                <button class="del-btn" onclick="deleteTask('${escHtml(s.id)}','${escHtml(i.id)}','${t.id}')" title="Eliminar">×</button>
+              </div>
             </div>
           </div>`).join('');
       return `
-        <div class="wave-block">
-          <div class="wave-header" onclick="toggleOleada('${escHtml(s.id)}','${escHtml(o.id)}')">
-            <span class="wave-label">${escHtml(o.name)}</span>
-            <div class="wave-stats">${statsHtml}</div>
-            <span class="wave-toggle">${o.open ? '▲' : '▼'}</span>
+        <div class="inicia-block">
+          <div class="inicia-header" onclick="toggleIniciativa('${escHtml(s.id)}','${escHtml(i.id)}')">
+            <span class="inicia-label">${escHtml(i.name)}</span>
+            <div class="inicia-stats">${statsHtml}</div>
+            <span class="inicia-toggle">${i.open ? '▲' : '▼'}</span>
           </div>
-          <div class="wave-body ${o.open ? 'open' : ''}" id="tasks-${s.id}-${o.id}">
+          <div class="inicia-body ${i.open ? 'open' : ''}" id="tasks-${s.id}-${i.id}">
             ${tasksHtml}
-            <button class="add-task-btn" onclick="showAddTask('${escHtml(s.id)}','${escHtml(o.id)}')">+ Añadir tarea</button>
+            <button class="add-task-btn" onclick="showAddTask('${escHtml(s.id)}','${escHtml(i.id)}')">+ Añadir tarea</button>
           </div>
         </div>`;
     }).join('');
@@ -391,63 +383,141 @@ function renderAll() {
           <span class="sistema-count">${openTasks} abiertas / ${allS.length} total</span>
           <span class="sistema-toggle ${s.open ? 'open' : ''}">▼</span>
         </div>
-        ${s.open ? `<div id="oleadas-${s.id}">${oleadasHtml}<button class="add-wave-btn" onclick="showAddOleada('${escHtml(s.id)}')">+ Añadir oleada</button></div>` : ''}
+        ${s.open ? `<div id="iniciativas-${s.id}">${inicHtml}<button class="add-inicia-btn" onclick="showAddIniciativa('${escHtml(s.id)}')">+ Añadir iniciativa</button></div>` : ''}
       </div>`;
   }).join('');
 }
 
-// ── Actions ────────────────────────────────────────────────────────────────
-async function writeDoc(ref, data, merge = false) {
+function cycleStatus(sistId, inicId, taskId) {
+  const sist = state.sistemas.find(s => s.id === sistId);
+  const inic = sist.iniciativas.find(i => i.id === inicId);
+  const task = inic.tasks.find(t => t.id === taskId);
+  const next = STATUS_ORDER[(STATUS_ORDER.indexOf(task.status) + 1) % STATUS_ORDER.length];
+  writeData(pTask(sistId, inicId, taskId), { status: next });
+}
+
+function deleteTask(sistId, inicId, taskId) {
+  if (!confirm('¿Eliminar esta tarea?')) return;
+  startSaving();
+  db.ref(pTask(sistId, inicId, taskId)).remove()
+    .then(doneSaving)
+    .catch(e => { doneSaving(); showToast('Error: ' + e.message, true); });
+}
+
+function showEditTask(sistId, inicId, taskId) {
+  const rowId = `trow-${sistId}-${inicId}-${taskId}`;
+  const formId = `tedit-${sistId}-${inicId}-${taskId}`;
+  if (document.getElementById(formId)) { document.getElementById(formId).remove(); return; }
+  const row = document.getElementById(rowId);
+  if (!row) return;
+
+  const sist = state.sistemas.find(s => s.id === sistId);
+  const inic = sist?.iniciativas.find(i => i.id === inicId);
+  const task = inic?.tasks.find(t => t.id === taskId);
+  if (!task) return;
+
+  const sistOptions = state.sistemas.map(s =>
+    `<option value="${escHtml(s.id)}" ${s.id === sistId ? 'selected' : ''}>${escHtml(s.name)}</option>`
+  ).join('');
+  const inicOptions = sist.iniciativas.map(i =>
+    `<option value="${escHtml(i.id)}" ${i.id === inicId ? 'selected' : ''}>${escHtml(i.name)}</option>`
+  ).join('');
+
+  const form = document.createElement('div');
+  form.className = 'task-edit-form'; form.id = formId;
+  form.innerHTML = `
+    <div class="form-row">
+      <input class="f-desc" placeholder="Descripción" id="fe-desc-${formId}" value="${escHtml(task.desc)}">
+      <input class="f-ticket" placeholder="Ticket / ID" id="fe-ticket-${formId}" value="${escHtml(task.ticket)}">
+    </div>
+    <div class="form-row">
+      <input class="f-person" placeholder="Persona asignada" id="fe-person-${formId}" value="${escHtml(task.person)}">
+      <select class="f-status" id="fe-status-${formId}">
+        <option value="pendiente" ${task.status==='pendiente'?'selected':''}>Pendiente</option>
+        <option value="en-curso" ${task.status==='en-curso'?'selected':''}>En curso</option>
+        <option value="bloqueado" ${task.status==='bloqueado'?'selected':''}>Bloqueado</option>
+        <option value="hecho" ${task.status==='hecho'?'selected':''}>Hecho</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <textarea class="f-note" placeholder="Nota o contexto" id="fe-note-${formId}">${escHtml(task.note)}</textarea>
+    </div>
+    <div class="form-row" style="align-items:center;gap:6px">
+      <span style="font-size:11px;color:var(--text-tertiary);white-space:nowrap">Mover a:</span>
+      <select class="f-dest" id="fe-sist-${formId}" onchange="updateInicOptions('${formId}',this.value,'${inicId}')">${sistOptions}</select>
+      <select class="f-dest" id="fe-inic-${formId}">${inicOptions}</select>
+    </div>
+    <div class="form-actions">
+      <button class="btn-save" onclick="saveEditTask('${sistId}','${inicId}','${taskId}','${formId}')">Guardar</button>
+      <button class="btn-cancel" onclick="document.getElementById('${formId}').remove()">Cancelar</button>
+    </div>`;
+  row.after(form);
+  document.getElementById('fe-desc-' + formId).focus();
+}
+
+function updateInicOptions(formId, newSistId, currentInicId) {
+  const sist = state.sistemas.find(s => s.id === newSistId);
+  if (!sist) return;
+  const sel = document.getElementById('fe-inic-' + formId);
+  sel.innerHTML = sist.iniciativas.map(i =>
+    `<option value="${escHtml(i.id)}">${escHtml(i.name)}</option>`
+  ).join('');
+}
+
+async function saveEditTask(origSistId, origInicId, taskId, formId) {
+  const desc = document.getElementById('fe-desc-' + formId)?.value.trim();
+  if (!desc) return;
+  const newSistId = document.getElementById('fe-sist-' + formId)?.value;
+  const newInicId = document.getElementById('fe-inic-' + formId)?.value;
+  const data = {
+    desc,
+    ticket: document.getElementById('fe-ticket-' + formId)?.value.trim() || '',
+    person: document.getElementById('fe-person-' + formId)?.value.trim() || '',
+    status: document.getElementById('fe-status-' + formId)?.value || 'en-curso',
+    note: document.getElementById('fe-note-' + formId)?.value.trim() || '',
+  };
+
   startSaving();
   try {
-    if (merge) await ref.set(data, { merge: true });
-    else await ref.update(data);
+    const isMoved = newSistId !== origSistId || newInicId !== origInicId;
+    if (isMoved) {
+      // Recuperar orden original y createdAt
+      const snap = await db.ref(pTask(origSistId, origInicId, taskId)).once('value');
+      const orig = snap.val() || {};
+      const destSist = state.sistemas.find(s => s.id === newSistId);
+      const destInic = destSist?.iniciativas.find(i => i.id === newInicId);
+      const maxOrder = destInic ? Math.max(-1, ...destInic.tasks.map(t => t.order ?? 0)) : 0;
+      await db.ref().update({
+        [pTask(origSistId, origInicId, taskId)]: null,
+        [pTask(newSistId, newInicId, taskId)]: { ...data, order: maxOrder + 1, createdAt: orig.createdAt || firebase.database.ServerValue.TIMESTAMP }
+      });
+    } else {
+      await db.ref(pTask(origSistId, origInicId, taskId)).update(data);
+    }
     doneSaving();
+    document.getElementById(formId)?.remove();
   } catch(e) {
     doneSaving();
     showToast('Error al guardar: ' + e.message, true);
   }
 }
 
-function taskRef(sistId, oleaId, taskId) {
-  return projectRef.collection('sistemas').doc(sistId).collection('oleadas').doc(oleaId).collection('tasks').doc(taskId);
-}
-
-function cycleStatus(sistId, oleaId, taskId) {
+function toggleIniciativa(sistId, inicId) {
   const sist = state.sistemas.find(s => s.id === sistId);
-  const olea = sist.oleadas.find(o => o.id === oleaId);
-  const task = olea.tasks.find(t => t.id === taskId);
-  const next = STATUS_ORDER[(STATUS_ORDER.indexOf(task.status) + 1) % STATUS_ORDER.length];
-  writeDoc(taskRef(sistId, oleaId, taskId), { status: next });
-}
-
-function cyclePendingStatus(sistId, oleaId, taskId) {
-  cycleStatus(sistId, oleaId, taskId);
-}
-
-function deleteTask(sistId, oleaId, taskId) {
-  if (!confirm('¿Eliminar esta tarea?')) return;
-  startSaving();
-  taskRef(sistId, oleaId, taskId).delete().then(doneSaving).catch(e => { doneSaving(); showToast('Error: ' + e.message, true); });
-}
-
-function toggleOleada(sistId, oleaId) {
-  const sist = state.sistemas.find(s => s.id === sistId);
-  const olea = sist.oleadas.find(o => o.id === oleaId);
-  writeDoc(projectRef.collection('sistemas').doc(sistId).collection('oleadas').doc(oleaId), { open: !olea.open });
+  const inic = sist.iniciativas.find(i => i.id === inicId);
+  writeData(pInic(sistId, inicId), { open: !inic.open });
 }
 
 function toggleSistema(sistId) {
   const sist = state.sistemas.find(s => s.id === sistId);
-  writeDoc(projectRef.collection('sistemas').doc(sistId), { open: !sist.open });
+  writeData(pSist(sistId), { open: !sist.open });
 }
 
-// ── Add task ───────────────────────────────────────────────────────────────
-function showAddTask(sistId, oleaId) {
-  const formId = 'form-' + sistId + '-' + oleaId;
+function showAddTask(sistId, inicId) {
+  const formId = 'form-' + sistId + '-' + inicId;
   const existing = document.getElementById(formId);
   if (existing) { existing.remove(); return; }
-  const container = document.getElementById('tasks-' + sistId + '-' + oleaId);
+  const container = document.getElementById('tasks-' + sistId + '-' + inicId);
   if (!container) return;
   const form = document.createElement('div');
   form.className = 'inline-form'; form.id = formId;
@@ -459,7 +529,7 @@ function showAddTask(sistId, oleaId) {
     <div class="form-row">
       <input class="f-person" placeholder="Persona asignada" id="fd-person-${formId}">
       <select class="f-status" id="fd-status-${formId}">
-        <option value="tercero">Esperando tercero</option>
+        <option value="pendiente">Pendiente</option>
         <option value="en-curso" selected>En curso</option>
         <option value="bloqueado">Bloqueado</option>
         <option value="hecho">Hecho</option>
@@ -469,29 +539,29 @@ function showAddTask(sistId, oleaId) {
       <textarea class="f-note" placeholder="Nota o contexto (opcional)" id="fd-note-${formId}"></textarea>
     </div>
     <div class="form-actions">
-      <button class="btn-save" onclick="saveTask('${sistId}','${oleaId}','${formId}')">Guardar</button>
+      <button class="btn-save" onclick="saveTask('${sistId}','${inicId}','${formId}')">Guardar</button>
       <button class="btn-cancel" onclick="document.getElementById('${formId}').remove()">Cancelar</button>
     </div>`;
   container.appendChild(form);
   document.getElementById('fd-desc-' + formId).focus();
 }
 
-async function saveTask(sistId, oleaId, formId) {
+async function saveTask(sistId, inicId, formId) {
   const desc = document.getElementById('fd-desc-' + formId)?.value.trim();
   if (!desc) return;
   const sist = state.sistemas.find(s => s.id === sistId);
-  const olea = sist?.oleadas.find(o => o.id === oleaId);
-  const maxOrder = olea ? Math.max(-1, ...olea.tasks.map(t => t.order ?? 0)) : 0;
+  const inic = sist?.iniciativas.find(i => i.id === inicId);
+  const maxOrder = inic ? Math.max(-1, ...inic.tasks.map(t => t.order ?? 0)) : 0;
   startSaving();
   try {
-    await projectRef.collection('sistemas').doc(sistId).collection('oleadas').doc(oleaId).collection('tasks').add({
+    await db.ref(pInic(sistId, inicId) + '/tasks').push({
       desc,
       ticket: document.getElementById('fd-ticket-' + formId)?.value.trim() || '',
       person: document.getElementById('fd-person-' + formId)?.value.trim() || '',
       status: document.getElementById('fd-status-' + formId)?.value || 'en-curso',
       note: document.getElementById('fd-note-' + formId)?.value.trim() || '',
       order: maxOrder + 1,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      createdAt: firebase.database.ServerValue.TIMESTAMP
     });
     doneSaving();
     document.getElementById(formId)?.remove();
@@ -501,50 +571,46 @@ async function saveTask(sistId, oleaId, formId) {
   }
 }
 
-// ── Add oleada ─────────────────────────────────────────────────────────────
-function showAddOleada(sistId) {
-  const formId = 'wform-' + sistId;
+function showAddIniciativa(sistId) {
+  const formId = 'iform-' + sistId;
   const existing = document.getElementById(formId);
   if (existing) { existing.remove(); return; }
-  const container = document.getElementById('oleadas-' + sistId);
+  const container = document.getElementById('iniciativas-' + sistId);
   if (!container) return;
   const form = document.createElement('div');
-  form.className = 'wave-inline-form'; form.id = formId;
+  form.className = 'inicia-inline-form'; form.id = formId;
   form.innerHTML = `
-    <input placeholder="Nombre de la oleada (ej: Oleada 10)" id="wf-name-${formId}" style="flex:1;min-width:160px">
-    <button class="btn-save" onclick="saveOleada('${sistId}','${formId}')">Añadir</button>
+    <input placeholder="Nombre de la iniciativa (ej: Iniciativa 10)" id="if-name-${formId}" style="flex:1;min-width:160px">
+    <button class="btn-save" onclick="saveIniciativa('${sistId}','${formId}')">Añadir</button>
     <button class="btn-cancel" onclick="document.getElementById('${formId}').remove()">✕</button>`;
-  const addBtn = container.querySelector('.add-wave-btn');
+  const addBtn = container.querySelector('.add-inicia-btn');
   container.insertBefore(form, addBtn);
-  document.getElementById('wf-name-' + formId).focus();
+  document.getElementById('if-name-' + formId).focus();
 }
 
-async function saveOleada(sistId, formId) {
-  const name = document.getElementById('wf-name-' + formId)?.value.trim();
+async function saveIniciativa(sistId, formId) {
+  const name = document.getElementById('if-name-' + formId)?.value.trim();
   if (!name) return;
   const sist = state.sistemas.find(s => s.id === sistId);
-  const maxOrder = sist ? Math.max(-1, ...sist.oleadas.map(o => o.order ?? 0)) : 0;
+  const maxOrder = sist ? Math.max(-1, ...sist.iniciativas.map(i => i.order ?? 0)) : 0;
   startSaving();
   try {
-    await projectRef.collection('sistemas').doc(sistId).collection('oleadas').add({
-      name, order: maxOrder + 1, open: true
-    });
+    await db.ref(pSist(sistId) + '/iniciativas').push({ name, order: maxOrder + 1, open: true });
     doneSaving();
     document.getElementById(formId)?.remove();
   } catch(e) {
     doneSaving();
-    showToast('Error al crear oleada: ' + e.message, true);
+    showToast('Error al crear iniciativa: ' + e.message, true);
   }
 }
 
-// ── Add sistema ────────────────────────────────────────────────────────────
 document.getElementById('add-sistema-btn').addEventListener('click', async () => {
   const name = prompt('Nombre del sistema:');
   if (!name?.trim()) return;
   const maxOrder = Math.max(-1, ...state.sistemas.map(s => s.order ?? 0));
   startSaving();
   try {
-    await projectRef.collection('sistemas').add({ name: name.trim(), order: maxOrder + 1, open: true });
+    await db.ref(projectPath + '/sistemas').push({ name: name.trim(), order: maxOrder + 1, open: true });
     doneSaving();
   } catch(e) {
     doneSaving();
@@ -552,7 +618,6 @@ document.getElementById('add-sistema-btn').addEventListener('click', async () =>
   }
 });
 
-// ── Edit project name ──────────────────────────────────────────────────────
 document.getElementById('project-name').addEventListener('click', () => {
   const el = document.getElementById('project-name');
   const current = state.projectName;
@@ -571,18 +636,26 @@ document.getElementById('project-name').addEventListener('click', () => {
     restored.addEventListener('click', arguments.callee);
     if (newName !== current) {
       startSaving();
-      try { await projectRef.update({ name: newName }); doneSaving(); }
-      catch(e) { doneSaving(); showToast('Error: ' + e.message, true); }
+      try {
+        await db.ref().update({
+          [`${projectPath}/name`]: newName,
+          [`user_projects/${uid}/${PROJECT_ID}/name`]: newName
+        });
+        doneSaving();
+      } catch(e) { doneSaving(); showToast('Error: ' + e.message, true); }
     }
   }
   input.addEventListener('blur', finish);
   input.addEventListener('keydown', e => { if (e.key === 'Enter') finish(); if (e.key === 'Escape') { input.value = current; finish(); } });
 });
 
-// ── Back button ────────────────────────────────────────────────────────────
 document.getElementById('back-btn').addEventListener('click', () => {
   location.href = 'index.html';
 });
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js');
+}
 </script>
 </body>
 </html>

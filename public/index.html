@@ -3,7 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Gestión de Proyectos</title>
+<title>Gestión de Iniciativas</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" type="image/png" href="/icon.png">
+<link rel="apple-touch-icon" href="/icon.png">
+<meta name="theme-color" content="#7C3AED">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Iniciativas">
 <style>
   :root {
     --bg: #F7F6F3; --surface: #FFFFFF; --border: #E2DFD8; --border-strong: #C8C4BB;
@@ -14,7 +21,6 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: var(--font); background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.6; min-height: 100vh; }
 
-  /* Auth screen */
   #auth-screen {
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     min-height: 100vh; gap: 1.5rem;
@@ -23,18 +29,25 @@
     background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
     padding: 2.5rem 2rem; text-align: center; max-width: 360px; width: 100%;
   }
+  .auth-logo { width: 80px; height: 80px; border-radius: 20px; margin: 0 auto 1rem; display: block; }
   .auth-title { font-size: 20px; font-weight: 600; margin-bottom: .5rem; letter-spacing: -.02em; }
   .auth-sub { font-size: 13px; color: var(--text-secondary); margin-bottom: 1.5rem; }
-  .btn-google {
-    display: flex; align-items: center; justify-content: center; gap: 10px;
-    background: var(--surface); border: 1px solid var(--border-strong); border-radius: 8px;
-    padding: 10px 20px; font-size: 14px; font-family: var(--font); cursor: pointer;
-    color: var(--text); width: 100%; transition: background .15s;
+  .auth-field { display: flex; flex-direction: column; gap: 4px; text-align: left; margin-bottom: 10px; }
+  .auth-field label { font-size: 12px; font-weight: 500; color: var(--text-secondary); }
+  .auth-field input {
+    font-size: 14px; font-family: var(--font); border: 1px solid var(--border-strong);
+    border-radius: 6px; padding: 8px 10px; background: var(--bg); color: var(--text); outline: none; width: 100%;
   }
-  .btn-google:hover { background: var(--bg); }
-  .btn-google svg { flex-shrink: 0; }
+  .auth-field input:focus { border-color: var(--accent); }
+  .btn-login {
+    background: var(--accent); color: #fff; border: none; border-radius: 8px;
+    padding: 10px 20px; font-size: 14px; font-family: var(--font); cursor: pointer;
+    width: 100%; margin-top: 4px; transition: opacity .15s;
+  }
+  .btn-login:hover { opacity: .88; }
+  .btn-login:disabled { opacity: .55; cursor: not-allowed; }
+  .auth-error { font-size: 12px; color: #991B1B; background: #FEE2E2; border-radius: 6px; padding: 7px 10px; margin-top: 8px; display: none; }
 
-  /* App screen */
   #app-screen { display: none; }
   .layout { max-width: 720px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
 
@@ -87,12 +100,19 @@
 <!-- Auth -->
 <div id="auth-screen">
   <div class="auth-card">
-    <div class="auth-title">Gestión de Oleadas</div>
-    <div class="auth-sub">Seguimiento de desarrollo por proyectos y oleadas</div>
-    <button class="btn-google" id="btn-google-login">
-      <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z"/></svg>
-      Entrar con Google
-    </button>
+    <img src="/icon.png" alt="Logo" class="auth-logo">
+    <div class="auth-title">Gestión de Iniciativas</div>
+    <div class="auth-sub">Seguimiento de desarrollo por proyectos e iniciativas</div>
+    <div class="auth-field">
+      <label for="auth-email">Correo electrónico</label>
+      <input type="email" id="auth-email" placeholder="usuario@ejemplo.com" autocomplete="email">
+    </div>
+    <div class="auth-field">
+      <label for="auth-password">Contraseña</label>
+      <input type="password" id="auth-password" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button class="btn-login" id="btn-login">Entrar</button>
+    <div class="auth-error" id="auth-error"></div>
   </div>
 </div>
 
@@ -102,7 +122,7 @@
     <div class="header">
       <div class="header-left">
         <h1>Mis proyectos</h1>
-        <p>Seguimiento de desarrollo por oleadas</p>
+        <p>Seguimiento de desarrollo por iniciativas</p>
       </div>
       <div class="header-right">
         <span class="user-chip" id="user-name"></span>
@@ -131,137 +151,96 @@
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 
 <script>
-// ── REEMPLAZA ESTO CON TU CONFIG DE FIREBASE ──────────────────────────────
 const firebaseConfig = {
-  apiKey: "TU_API_KEY",
-  authDomain: "TU_PROJECT_ID.firebaseapp.com",
-  projectId: "TU_PROJECT_ID",
-  storageBucket: "TU_PROJECT_ID.appspot.com",
-  messagingSenderId: "TU_SENDER_ID",
-  appId: "TU_APP_ID"
+  apiKey: "AIzaSyCdmEIoDpZ_C9iJPLBrsTRpF8rcV3ad_7I",
+  authDomain: "gestion-tareas-6a390.firebaseapp.com",
+  projectId: "gestion-tareas-6a390",
+  storageBucket: "gestion-tareas-6a390.firebasestorage.app",
+  messagingSenderId: "943514904599",
+  appId: "1:943514904599:web:6f65d94a546f47fd50d452",
+  databaseURL: "https://gestion-tareas-6a390-default-rtdb.europe-west1.firebasedatabase.app"
 };
-// ──────────────────────────────────────────────────────────────────────────
 
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
-const db = firebase.firestore();
+const db = firebase.database();
 
-const SEED_DATA = {
-  sistemas: [
-    {
-      name: 'AURORA / AFS', order: 0, open: true,
-      oleadas: [
-        {
-          name: 'Oleada 2', order: 0, open: false,
-          tasks: [
-            { desc: 'OnConnect devuelve error técnico – posible traducción para AFS en componente técnico', ticket: '', person: 'Fran', status: 'en-curso', note: 'Posiblemente lo tenga que abrir Fran. Mover a Oleada 8.', order: 0 }
-          ]
-        },
-        {
-          name: 'Oleada 4', order: 1, open: false,
-          tasks: [
-            { desc: 'Gestión de baja del módulo MFO', ticket: '26116', person: '', status: 'en-curso', note: 'Requiere despliegue para modificar endpoints. Sigue pendiente.', order: 0 }
-          ]
-        },
-        {
-          name: 'Oleada 5', order: 2, open: false,
-          tasks: [
-            { desc: 'AURORA destino – integración completa', ticket: '', person: '', status: 'hecho', note: 'En producción.', order: 0 }
-          ]
-        },
-        {
-          name: 'Oleada 6', order: 3, open: true,
-          tasks: [
-            { desc: 'Suspensión / Reactivación Mundo Fijo – confirmar prueba pasada', ticket: '90010', person: 'OnConnect / AFS', status: 'en-curso', note: 'Prueba OK. Pendiente de timeouts (Aurora tarda ~40s). Canal aún no abierto.', order: 0 }
-          ]
-        },
-        {
-          name: 'Oleada 7', order: 4, open: true,
-          tasks: [
-            { desc: 'Baja de Línea Prepago – pruebas con error', ticket: '48061 / 1016', person: 'Fran', status: 'bloqueado', note: 'SQL Insert pendiente de subir. Faltan endpoints.', order: 0 }
-          ]
-        },
-        {
-          name: 'Oleada 8', order: 5, open: true,
-          tasks: [
-            { desc: 'Solicitud cancelación de petición', ticket: '131003', person: 'Fran', status: 'en-curso', note: 'Fecha tentativa 12/06. 2A2 posible desde 10/06.', order: 0 },
-            { desc: 'Solicitud de carga de datos', ticket: '131002', person: 'Fran', status: 'en-curso', note: 'Empezando desarrollo.', order: 1 }
-          ]
-        },
-        {
-          name: 'Oleada 9', order: 6, open: false,
-          tasks: [
-            { desc: 'Consulta Ciclo Facturación Cliente', ticket: '3057', person: '', status: 'en-curso', note: 'HTs realizadas. Pendiente GO para desarrollo.', order: 0 },
-            { desc: 'Alta, Baja y Modificación de Promoción (Cobro OCC)', ticket: '26069', person: '', status: 'en-curso', note: '', order: 1 },
-            { desc: 'Consulta de Datos Personales BSCS', ticket: '3049', person: '', status: 'en-curso', note: '', order: 2 }
-          ]
-        }
-      ]
-    }
-  ]
-};
 
-async function seedProject(projectRef, uid) {
-  const batch = db.batch();
-  for (const [si, sist] of SEED_DATA.sistemas.entries()) {
-    const sistRef = projectRef.collection('sistemas').doc();
-    batch.set(sistRef, { name: sist.name, order: sist.order, open: sist.open, ownerUid: uid });
-    for (const [oi, olea] of sist.oleadas.entries()) {
-      const oleaRef = sistRef.collection('oleadas').doc();
-      batch.set(oleaRef, { name: olea.name, order: olea.order, open: olea.open, ownerUid: uid });
-      for (const task of olea.tasks) {
-        const taskRef = oleaRef.collection('tasks').doc();
-        batch.set(taskRef, { ...task, ownerUid: uid, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
-      }
-    }
-  }
-  await batch.commit();
-}
-
-let unsubProjects = null;
+let projectsRef = null;
+let currentUid = null;
 
 auth.onAuthStateChanged(user => {
   if (user) {
+    if (currentUid === user.uid) return; // ya inicializado para este usuario
+    currentUid = user.uid;
     document.getElementById('auth-screen').style.display = 'none';
     document.getElementById('app-screen').style.display = 'block';
     document.getElementById('user-name').textContent = user.displayName || user.email;
     loadProjects(user.uid);
   } else {
+    currentUid = null;
     document.getElementById('auth-screen').style.display = 'flex';
     document.getElementById('app-screen').style.display = 'none';
-    if (unsubProjects) { unsubProjects(); unsubProjects = null; }
+    if (projectsRef) { projectsRef.off(); projectsRef = null; }
   }
 });
 
-document.getElementById('btn-google-login').addEventListener('click', () => {
-  const provider = new firebase.auth.GoogleAuthProvider();
-  auth.signInWithPopup(provider).catch(err => showError(err.message));
-});
+function doLogin() {
+  const email = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value;
+  const btn = document.getElementById('btn-login');
+  const errEl = document.getElementById('auth-error');
+  if (!email || !password) return;
+  btn.disabled = true; btn.textContent = 'Entrando…';
+  errEl.style.display = 'none';
+  auth.signInWithEmailAndPassword(email, password)
+    .catch(err => {
+      const msgs = {
+        'auth/user-not-found': 'Usuario no encontrado.',
+        'auth/wrong-password': 'Contraseña incorrecta.',
+        'auth/invalid-email': 'Correo no válido.',
+        'auth/too-many-requests': 'Demasiados intentos. Espera un momento.',
+        'auth/invalid-credential': 'Credenciales incorrectas.',
+      };
+      errEl.textContent = msgs[err.code] || err.message;
+      errEl.style.display = 'block';
+    })
+    .finally(() => { btn.disabled = false; btn.textContent = 'Entrar'; });
+}
+
+document.getElementById('btn-login').addEventListener('click', doLogin);
+document.getElementById('auth-password').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+document.getElementById('auth-email').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('auth-password').focus(); });
 
 document.getElementById('btn-signout').addEventListener('click', () => auth.signOut());
 
 function loadProjects(uid) {
   document.getElementById('loading').style.display = 'block';
-  unsubProjects = db.collection('projects')
-    .where('ownerUid', '==', uid)
-    .orderBy('createdAt', 'asc')
-    .onSnapshot(snap => {
-      document.getElementById('loading').style.display = 'none';
-      renderProjects(snap.docs);
-    }, err => {
-      document.getElementById('loading').style.display = 'none';
-      showError(err.message);
+  // Escucha solo metadata ligera, no el árbol completo de sistemas/tareas
+  projectsRef = db.ref('user_projects/' + uid);
+  projectsRef.on('value', snap => {
+    document.getElementById('loading').style.display = 'none';
+    const docs = [];
+    snap.forEach(child => {
+      const val = child.val();
+      if (val) docs.push({ id: child.key, data: val });
     });
+    docs.sort((a, b) => (a.data.createdAt || 0) - (b.data.createdAt || 0));
+    renderProjects(docs);
+  }, err => {
+    document.getElementById('loading').style.display = 'none';
+    showError(err.message);
+  });
 }
 
 function renderProjects(docs) {
   const grid = document.getElementById('projects-grid');
   grid.innerHTML = docs.map(doc => {
-    const d = doc.data();
-    const date = d.createdAt ? new Date(d.createdAt.toDate()).toLocaleDateString('es-ES') : '';
+    const d = doc.data;
+    const date = d.createdAt ? new Date(d.createdAt).toLocaleDateString('es-ES') : '';
     return `<div class="project-card" onclick="openProject('${doc.id}')">
       <div class="pc-name">${escHtml(d.name)}</div>
       <div class="pc-meta">${date}</div>
@@ -286,25 +265,20 @@ document.getElementById('btn-cancel-project').addEventListener('click', () => {
 document.getElementById('btn-create-project').addEventListener('click', createProject);
 document.getElementById('new-project-name').addEventListener('keydown', e => { if (e.key === 'Enter') createProject(); });
 
-let isFirstProject = false;
-
 async function createProject() {
   const name = document.getElementById('new-project-name').value.trim();
   if (!name) return;
   const user = auth.currentUser;
   const btn = document.getElementById('btn-create-project');
   btn.disabled = true; btn.textContent = 'Creando…';
-
-  const snap = await db.collection('projects').where('ownerUid', '==', user.uid).get();
-  isFirstProject = snap.empty;
-
   try {
-    const ref = await db.collection('projects').add({
-      name,
-      ownerUid: user.uid,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    const newKey = db.ref().push().key;
+    const ts = firebase.database.ServerValue.TIMESTAMP;
+    await db.ref().update({
+      [`user_projects/${user.uid}/${newKey}`]: { name, createdAt: ts },
+      [`projects/${user.uid}/${newKey}/name`]: name,
+      [`projects/${user.uid}/${newKey}/createdAt`]: ts
     });
-    if (isFirstProject) await seedProject(ref, user.uid);
     document.getElementById('new-project-form').style.display = 'none';
     document.getElementById('new-project-name').value = '';
   } catch(err) {
@@ -327,6 +301,10 @@ function showError(msg) {
 
 function escHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js');
 }
 </script>
 </body>

@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestión de Proyectos</title>
+<style>
+  :root {
+    --bg: #F7F6F3; --surface: #FFFFFF; --border: #E2DFD8; --border-strong: #C8C4BB;
+    --text: #1A1916; --text-secondary: #6B6860; --text-tertiary: #A09C94;
+    --accent: #2D5BE3; --accent-light: #EEF2FD;
+    --font: 'Inter', system-ui, sans-serif; --mono: 'JetBrains Mono', 'Fira Mono', monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font); background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.6; min-height: 100vh; }
+
+  /* Auth screen */
+  #auth-screen {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-height: 100vh; gap: 1.5rem;
+  }
+  .auth-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 2.5rem 2rem; text-align: center; max-width: 360px; width: 100%;
+  }
+  .auth-title { font-size: 20px; font-weight: 600; margin-bottom: .5rem; letter-spacing: -.02em; }
+  .auth-sub { font-size: 13px; color: var(--text-secondary); margin-bottom: 1.5rem; }
+  .btn-google {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    background: var(--surface); border: 1px solid var(--border-strong); border-radius: 8px;
+    padding: 10px 20px; font-size: 14px; font-family: var(--font); cursor: pointer;
+    color: var(--text); width: 100%; transition: background .15s;
+  }
+  .btn-google:hover { background: var(--bg); }
+  .btn-google svg { flex-shrink: 0; }
+
+  /* App screen */
+  #app-screen { display: none; }
+  .layout { max-width: 720px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+
+  .header { margin-bottom: 2rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+  .header-left h1 { font-size: 20px; font-weight: 600; letter-spacing: -.02em; }
+  .header-left p { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+  .header-right { display: flex; align-items: center; gap: 10px; }
+  .user-chip { font-size: 12px; color: var(--text-secondary); background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 4px 12px; }
+  .btn-signout { font-size: 12px; color: var(--text-tertiary); background: none; border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; cursor: pointer; font-family: var(--font); }
+  .btn-signout:hover { border-color: var(--border-strong); color: var(--text); }
+
+  .section-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--text-tertiary); margin-bottom: .75rem; display: flex; align-items: center; gap: 8px; }
+  .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  .projects-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; margin-bottom: 1.5rem; }
+  .project-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 1.25rem 1.25rem 1rem; cursor: pointer; transition: border-color .15s, box-shadow .15s;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .project-card:hover { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-light); }
+  .pc-name { font-size: 15px; font-weight: 600; letter-spacing: -.01em; }
+  .pc-meta { font-size: 12px; color: var(--text-tertiary); font-family: var(--mono); }
+  .pc-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 4px; }
+  .pc-open { font-size: 11px; color: var(--accent); font-weight: 500; }
+
+  .new-project-card {
+    background: none; border: 1px dashed var(--border-strong); border-radius: 10px;
+    padding: 1.25rem; cursor: pointer; color: var(--text-secondary); font-size: 14px;
+    font-family: var(--font); text-align: left; transition: border-color .15s, color .15s;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .new-project-card:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+
+  .inline-form { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1.25rem; margin-bottom: 12px; display: flex; flex-direction: column; gap: 10px; }
+  .form-row { display: flex; gap: 8px; }
+  .form-row input { flex: 1; font-size: 14px; font-family: var(--font); border: 1px solid var(--border-strong); border-radius: 6px; padding: 7px 10px; background: var(--bg); color: var(--text); outline: none; }
+  .form-row input:focus { border-color: var(--accent); }
+  .form-actions { display: flex; gap: 8px; }
+  .btn-save { background: var(--accent); color: #fff; border: none; border-radius: 6px; padding: 7px 16px; font-size: 13px; cursor: pointer; font-family: var(--font); }
+  .btn-save:hover { opacity: .88; }
+  .btn-cancel { background: none; border: 1px solid var(--border-strong); border-radius: 6px; padding: 7px 12px; font-size: 13px; cursor: pointer; color: var(--text-secondary); font-family: var(--font); }
+
+  #loading { display: none; font-size: 13px; color: var(--text-tertiary); padding: 1rem 0; font-style: italic; }
+  #error-msg { display: none; font-size: 13px; color: #991B1B; background: #FEE2E2; border-radius: 6px; padding: 8px 12px; margin-bottom: 1rem; }
+</style>
+</head>
+<body>
+
+<!-- Auth -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="auth-title">Gestión de Oleadas</div>
+    <div class="auth-sub">Seguimiento de desarrollo por proyectos y oleadas</div>
+    <button class="btn-google" id="btn-google-login">
+      <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z"/></svg>
+      Entrar con Google
+    </button>
+  </div>
+</div>
+
+<!-- App -->
+<div id="app-screen">
+  <div class="layout">
+    <div class="header">
+      <div class="header-left">
+        <h1>Mis proyectos</h1>
+        <p>Seguimiento de desarrollo por oleadas</p>
+      </div>
+      <div class="header-right">
+        <span class="user-chip" id="user-name"></span>
+        <button class="btn-signout" id="btn-signout">Cerrar sesión</button>
+      </div>
+    </div>
+
+    <div id="error-msg"></div>
+    <div id="loading">Cargando proyectos…</div>
+
+    <div class="section-title">Proyectos</div>
+    <div class="projects-grid" id="projects-grid"></div>
+
+    <div id="new-project-form" style="display:none" class="inline-form">
+      <div class="form-row">
+        <input id="new-project-name" placeholder="Nombre del proyecto (ej: Cliente ACME)" maxlength="80">
+      </div>
+      <div class="form-actions">
+        <button class="btn-save" id="btn-create-project">Crear proyecto</button>
+        <button class="btn-cancel" id="btn-cancel-project">Cancelar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+<script>
+// ── REEMPLAZA ESTO CON TU CONFIG DE FIREBASE ──────────────────────────────
+const firebaseConfig = {
+  apiKey: "TU_API_KEY",
+  authDomain: "TU_PROJECT_ID.firebaseapp.com",
+  projectId: "TU_PROJECT_ID",
+  storageBucket: "TU_PROJECT_ID.appspot.com",
+  messagingSenderId: "TU_SENDER_ID",
+  appId: "TU_APP_ID"
+};
+// ──────────────────────────────────────────────────────────────────────────
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+const SEED_DATA = {
+  sistemas: [
+    {
+      name: 'AURORA / AFS', order: 0, open: true,
+      oleadas: [
+        {
+          name: 'Oleada 2', order: 0, open: false,
+          tasks: [
+            { desc: 'OnConnect devuelve error técnico – posible traducción para AFS en componente técnico', ticket: '', person: 'Fran', status: 'en-curso', note: 'Posiblemente lo tenga que abrir Fran. Mover a Oleada 8.', order: 0 }
+          ]
+        },
+        {
+          name: 'Oleada 4', order: 1, open: false,
+          tasks: [
+            { desc: 'Gestión de baja del módulo MFO', ticket: '26116', person: '', status: 'en-curso', note: 'Requiere despliegue para modificar endpoints. Sigue pendiente.', order: 0 }
+          ]
+        },
+        {
+          name: 'Oleada 5', order: 2, open: false,
+          tasks: [
+            { desc: 'AURORA destino – integración completa', ticket: '', person: '', status: 'hecho', note: 'En producción.', order: 0 }
+          ]
+        },
+        {
+          name: 'Oleada 6', order: 3, open: true,
+          tasks: [
+            { desc: 'Suspensión / Reactivación Mundo Fijo – confirmar prueba pasada', ticket: '90010', person: 'OnConnect / AFS', status: 'en-curso', note: 'Prueba OK. Pendiente de timeouts (Aurora tarda ~40s). Canal aún no abierto.', order: 0 }
+          ]
+        },
+        {
+          name: 'Oleada 7', order: 4, open: true,
+          tasks: [
+            { desc: 'Baja de Línea Prepago – pruebas con error', ticket: '48061 / 1016', person: 'Fran', status: 'bloqueado', note: 'SQL Insert pendiente de subir. Faltan endpoints.', order: 0 }
+          ]
+        },
+        {
+          name: 'Oleada 8', order: 5, open: true,
+          tasks: [
+            { desc: 'Solicitud cancelación de petición', ticket: '131003', person: 'Fran', status: 'en-curso', note: 'Fecha tentativa 12/06. 2A2 posible desde 10/06.', order: 0 },
+            { desc: 'Solicitud de carga de datos', ticket: '131002', person: 'Fran', status: 'en-curso', note: 'Empezando desarrollo.', order: 1 }
+          ]
+        },
+        {
+          name: 'Oleada 9', order: 6, open: false,
+          tasks: [
+            { desc: 'Consulta Ciclo Facturación Cliente', ticket: '3057', person: '', status: 'en-curso', note: 'HTs realizadas. Pendiente GO para desarrollo.', order: 0 },
+            { desc: 'Alta, Baja y Modificación de Promoción (Cobro OCC)', ticket: '26069', person: '', status: 'en-curso', note: '', order: 1 },
+            { desc: 'Consulta de Datos Personales BSCS', ticket: '3049', person: '', status: 'en-curso', note: '', order: 2 }
+          ]
+        }
+      ]
+    }
+  ]
+};
+
+async function seedProject(projectRef, uid) {
+  const batch = db.batch();
+  for (const [si, sist] of SEED_DATA.sistemas.entries()) {
+    const sistRef = projectRef.collection('sistemas').doc();
+    batch.set(sistRef, { name: sist.name, order: sist.order, open: sist.open, ownerUid: uid });
+    for (const [oi, olea] of sist.oleadas.entries()) {
+      const oleaRef = sistRef.collection('oleadas').doc();
+      batch.set(oleaRef, { name: olea.name, order: olea.order, open: olea.open, ownerUid: uid });
+      for (const task of olea.tasks) {
+        const taskRef = oleaRef.collection('tasks').doc();
+        batch.set(taskRef, { ...task, ownerUid: uid, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+      }
+    }
+  }
+  await batch.commit();
+}
+
+let unsubProjects = null;
+
+auth.onAuthStateChanged(user => {
+  if (user) {
+    document.getElementById('auth-screen').style.display = 'none';
+    document.getElementById('app-screen').style.display = 'block';
+    document.getElementById('user-name').textContent = user.displayName || user.email;
+    loadProjects(user.uid);
+  } else {
+    document.getElementById('auth-screen').style.display = 'flex';
+    document.getElementById('app-screen').style.display = 'none';
+    if (unsubProjects) { unsubProjects(); unsubProjects = null; }
+  }
+});
+
+document.getElementById('btn-google-login').addEventListener('click', () => {
+  const provider = new firebase.auth.GoogleAuthProvider();
+  auth.signInWithPopup(provider).catch(err => showError(err.message));
+});
+
+document.getElementById('btn-signout').addEventListener('click', () => auth.signOut());
+
+function loadProjects(uid) {
+  document.getElementById('loading').style.display = 'block';
+  unsubProjects = db.collection('projects')
+    .where('ownerUid', '==', uid)
+    .orderBy('createdAt', 'asc')
+    .onSnapshot(snap => {
+      document.getElementById('loading').style.display = 'none';
+      renderProjects(snap.docs);
+    }, err => {
+      document.getElementById('loading').style.display = 'none';
+      showError(err.message);
+    });
+}
+
+function renderProjects(docs) {
+  const grid = document.getElementById('projects-grid');
+  grid.innerHTML = docs.map(doc => {
+    const d = doc.data();
+    const date = d.createdAt ? new Date(d.createdAt.toDate()).toLocaleDateString('es-ES') : '';
+    return `<div class="project-card" onclick="openProject('${doc.id}')">
+      <div class="pc-name">${escHtml(d.name)}</div>
+      <div class="pc-meta">${date}</div>
+      <div class="pc-footer"><span class="pc-open">Abrir →</span></div>
+    </div>`;
+  }).join('') + `<button class="new-project-card" id="btn-new-project">
+    <span style="font-size:20px;line-height:1">+</span> Nuevo proyecto
+  </button>`;
+  document.getElementById('btn-new-project').addEventListener('click', showNewProjectForm);
+}
+
+function showNewProjectForm() {
+  document.getElementById('new-project-form').style.display = 'flex';
+  document.getElementById('new-project-name').focus();
+}
+
+document.getElementById('btn-cancel-project').addEventListener('click', () => {
+  document.getElementById('new-project-form').style.display = 'none';
+  document.getElementById('new-project-name').value = '';
+});
+
+document.getElementById('btn-create-project').addEventListener('click', createProject);
+document.getElementById('new-project-name').addEventListener('keydown', e => { if (e.key === 'Enter') createProject(); });
+
+let isFirstProject = false;
+
+async function createProject() {
+  const name = document.getElementById('new-project-name').value.trim();
+  if (!name) return;
+  const user = auth.currentUser;
+  const btn = document.getElementById('btn-create-project');
+  btn.disabled = true; btn.textContent = 'Creando…';
+
+  const snap = await db.collection('projects').where('ownerUid', '==', user.uid).get();
+  isFirstProject = snap.empty;
+
+  try {
+    const ref = await db.collection('projects').add({
+      name,
+      ownerUid: user.uid,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    if (isFirstProject) await seedProject(ref, user.uid);
+    document.getElementById('new-project-form').style.display = 'none';
+    document.getElementById('new-project-name').value = '';
+  } catch(err) {
+    showError(err.message);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Crear proyecto';
+  }
+}
+
+function openProject(id) {
+  window.location.href = 'proyecto.html?id=' + id;
+}
+
+function showError(msg) {
+  const el = document.getElementById('error-msg');
+  el.textContent = msg;
+  el.style.display = 'block';
+  setTimeout(() => el.style.display = 'none', 5000);
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+</body>
+</html>

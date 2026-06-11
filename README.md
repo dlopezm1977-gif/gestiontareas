@@ -15,13 +15,31 @@ Aplicación web de seguimiento de proyectos de desarrollo por iniciativas, con F
 ## Estructura de la app
 
 ```
-public/
+docs/
   index.html      — lista de proyectos del usuario autenticado
   proyecto.html   — detalle de un proyecto: sistemas, iniciativas y tareas
   manifest.json   — manifiesto PWA (nombre, icono, colores)
   sw.js           — service worker (caché offline de estáticos)
   icon.png        — icono de la app (tab del navegador, pantalla de login, icono PWA)
 ```
+
+---
+
+## Funcionalidades
+
+### Gestión de proyectos (`index.html`)
+- Crear y listar proyectos por usuario autenticado
+- Renombrar proyecto (clic sobre el nombre)
+
+### Detalle de proyecto (`proyecto.html`)
+- **Sistemas**: crear, renombrar (botón ✏ en hover), colapsar/expandir
+- **Iniciativas**: crear, renombrar (botón ✏ en hover), colapsar/expandir
+- **Tareas**: crear, editar, eliminar, mover entre sistemas/iniciativas, ciclar estado con un clic
+- **Estados**: `Pendiente` → `En curso` → `Bloqueado` → `Hecho` (ciclo al hacer clic)
+- **Panel "Requieren atención"**: muestra tareas en estado Pendiente o Bloqueado con chips de iniciativa, sistema y persona alineados a ancho fijo
+- **Buscador**: filtra en tiempo real por nombre de sistema, nombre de iniciativa, persona asignada o estado — afecta tanto al panel de atención como al detalle por sistema
+- **Resumen de contadores** por estado en la cabecera
+- **Guardado automático** en Firebase con indicador "Guardando…"
 
 ---
 
@@ -54,7 +72,7 @@ public/
 
 ### 5. Pegar la config en el código
 
-Busca el bloque `firebaseConfig` **en ambos archivos** (`public/index.html` y `public/proyecto.html`) y reemplaza los valores, asegurándote de incluir `databaseURL`:
+Busca el bloque `firebaseConfig` **en ambos archivos** (`docs/index.html` y `docs/proyecto.html`) y reemplaza los valores, asegurándote de incluir `databaseURL`:
 
 ```js
 const firebaseConfig = {
@@ -82,14 +100,15 @@ const firebaseConfig = {
 
 ## Desarrollo local
 
-Desde la carpeta `public/`, lanza un servidor HTTP simple:
+Desde la raíz del proyecto, lanza un servidor HTTP simple con Node.js:
 
 ```bash
-cd public
-python -m http.server 8080
+node serve-local.js
 ```
 
-Abre `http://localhost:8080` en el navegador.
+Abre `http://localhost:3000` en el navegador.
+
+> `serve-local.js` sirve los archivos de `docs/` y maneja correctamente los query params (p. ej. `proyecto.html?id=...`).
 
 ---
 

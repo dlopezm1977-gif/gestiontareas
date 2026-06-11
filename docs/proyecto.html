@@ -49,6 +49,14 @@
   .sum-card.bloqueado .sum-value { color: #991B1B; }
   .sum-card.hecho .sum-value { color: #065F46; }
 
+  .search-bar { position: relative; display: flex; align-items: center; margin-bottom: 1.5rem; }
+  .search-icon { position: absolute; left: .75rem; font-size: 15px; color: var(--text-tertiary); pointer-events: none; line-height: 1; }
+  .search-input { width: 100%; border: 1px solid var(--border); border-radius: 8px; padding: .5rem 2.2rem .5rem 2.2rem; font-size: 13px; font-family: var(--font); background: var(--surface); color: var(--text); outline: none; transition: border-color .15s; }
+  .search-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(45,91,227,.08); }
+  .search-clear { position: absolute; right: .6rem; background: none; border: none; cursor: pointer; color: var(--text-tertiary); font-size: 18px; line-height: 1; padding: 0 4px; }
+  .search-clear:hover { color: var(--text); }
+  .no-results { font-size: 13px; color: var(--text-tertiary); font-style: italic; padding: .5rem 0; }
+
   .pending-section { margin-bottom: 2rem; }
   .section-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--text-tertiary); margin-bottom: .75rem; display: flex; align-items: center; gap: 8px; }
   .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
@@ -58,16 +66,19 @@
   .pending-item .status { width: 140px; text-align: center; flex-shrink: 0; }
   .pi-desc { flex: 1; font-size: 13px; min-width: 160px; }
   .pi-wave { display: flex; gap: 5px; align-items: center; flex-shrink: 0; }
-  .pi-chip { font-size: 11px; font-family: var(--mono); font-weight: 600; white-space: nowrap; border-radius: 4px; padding: 1px 7px; }
-  .pi-chip.inicia { background: #EEF2FD; color: #2D5BE3; }
-  .pi-chip.sist   { background: #F3F4F6; color: #374151; border: 1px solid #E5E7EB; }
-  .pi-person { font-size: 12px; color: var(--text-secondary); }
+  .pi-chip { font-size: 11px; font-family: var(--mono); font-weight: 600; white-space: nowrap; border-radius: 4px; padding: 1px 7px; overflow: hidden; text-overflow: ellipsis; text-align: center; }
+  .pi-chip.inicia { background: #EEF2FD; color: #2D5BE3; width: 140px; }
+  .pi-chip.sist   { background: #F3F4F6; color: #374151; border: 1px solid #E5E7EB; width: 100px; }
+  .pi-chip.person { background: #F0FDF4; color: #166534; border: 1px solid #BBF7D0; width: 60px; }
 
   .sistema-block { margin-bottom: 1.5rem; }
   .sistema-header { display: flex; align-items: center; gap: 10px; margin-bottom: .75rem; cursor: pointer; user-select: none; }
   .sistema-name { font-size: 13px; font-weight: 600; font-family: var(--mono); letter-spacing: .04em; }
   .sistema-count { font-size: 11px; color: var(--text-tertiary); background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 1px 8px; }
   .sistema-toggle { font-size: 12px; color: var(--text-tertiary); margin-left: auto; transition: transform .2s; }
+  .rename-btn { background: none; border: none; cursor: pointer; font-size: 11px; color: var(--text-tertiary); padding: 2px 4px; border-radius: 3px; opacity: 0; transition: opacity .15s; line-height: 1; }
+  .sistema-header:hover .rename-btn, .inicia-header:hover .rename-btn { opacity: 1; }
+  .rename-btn:hover { color: var(--accent); background: var(--accent-light); }
   .sistema-toggle.open { transform: rotate(180deg); }
 
   .inicia-block { border: 1px solid var(--border); border-radius: 8px; background: var(--surface); margin-bottom: 8px; overflow: hidden; }
@@ -167,6 +178,12 @@
     <div class="sum-card hecho"><div class="sum-label">Hecho</div><div class="sum-value" id="cnt-hecho">0</div></div>
   </div>
 
+  <div class="search-bar">
+    <span class="search-icon">⌕</span>
+    <input type="text" id="search-input" class="search-input" placeholder="Buscar por sistema, iniciativa o persona…" />
+    <button id="search-clear" class="search-clear" style="display:none">×</button>
+  </div>
+
   <div class="pending-section">
     <div class="section-title">Requieren atención</div>
     <div class="pending-list" id="pending-list"></div>
@@ -214,6 +231,7 @@ const PROJECT_ID = params.get('id');
 if (!PROJECT_ID) { location.href = 'index.html'; }
 
 let savingCount = 0;
+let filterText = '';
 function startSaving() {
   savingCount++;
   document.getElementById('saving-indicator').classList.add('visible');
@@ -310,6 +328,12 @@ async function writeData(path, data) {
   }
 }
 
+function taskMatchesFilter(t) {
+  return t.person.toLowerCase().includes(filterText) ||
+         t.status.toLowerCase().includes(filterText) ||
+         statusLabel(t.status).toLowerCase().includes(filterText);
+}
+
 function renderAll() {
   const allTasks = state.sistemas.flatMap(s => s.iniciativas.flatMap(i => i.tasks));
 
@@ -318,9 +342,17 @@ function renderAll() {
   });
 
   const pendingList = document.getElementById('pending-list');
-  const attention = allTasks.filter(t => t.status === 'pendiente' || t.status === 'bloqueado');
+  const attention = allTasks.filter(t => {
+    if (t.status !== 'pendiente' && t.status !== 'bloqueado') return false;
+    if (!filterText) return true;
+    const sist = state.sistemas.find(s => s.iniciativas.some(i => i.tasks.some(x => x.id === t.id)));
+    const inic = sist?.iniciativas.find(i => i.tasks.some(x => x.id === t.id));
+    return sist?.name.toLowerCase().includes(filterText) ||
+           inic?.name.toLowerCase().includes(filterText) ||
+           taskMatchesFilter(t);
+  });
   if (attention.length === 0) {
-    pendingList.innerHTML = '<div style="font-size:13px;color:var(--text-tertiary);font-style:italic;padding:.5rem 0">Todo al día ✓</div>';
+    pendingList.innerHTML = `<div class="no-results">${filterText ? 'Sin resultados para "' + escHtml(filterText) + '"' : 'Todo al día ✓'}</div>`;
   } else {
     pendingList.innerHTML = attention.map(t => {
       const sist = state.sistemas.find(s => s.iniciativas.some(i => i.tasks.some(x => x.id === t.id)));
@@ -328,24 +360,39 @@ function renderAll() {
       return `<div class="pending-item">
         <button class="status ${t.status}" onclick="cycleStatus('${escHtml(sist.id)}','${escHtml(inic.id)}','${t.id}')">${statusLabel(t.status)}</button>
         <span class="pi-desc">${escHtml(t.desc)}${t.ticket ? ' <span style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--text)">#'+escHtml(t.ticket)+'</span>' : ''}</span>
-        <span class="pi-wave"><span class="pi-chip inicia">${escHtml(inic?.name||'')}</span><span class="pi-chip sist">${escHtml(sist?.name||'')}</span></span>
-        ${t.person ? '<span class="pi-person">↳ ' + escHtml(t.person) + '</span>' : ''}
+        <span class="pi-wave"><span class="pi-chip inicia">${escHtml(inic?.name||'')}</span><span class="pi-chip sist">${escHtml(sist?.name||'')}</span>${t.person ? '<span class="pi-chip person">'+escHtml(t.person)+'</span>' : '<span class="pi-chip person" style="opacity:.25">—</span>'}</span>
       </div>`;
     }).join('');
   }
 
   const container = document.getElementById('sistemas-container');
-  container.innerHTML = state.sistemas.map(s => {
-    const allS = s.iniciativas.flatMap(i => i.tasks);
+  const sistemasFiltrados = filterText ? state.sistemas.filter(s =>
+    s.name.toLowerCase().includes(filterText) ||
+    s.iniciativas.some(i =>
+      i.name.toLowerCase().includes(filterText) ||
+      i.tasks.some(t => taskMatchesFilter(t))
+    )
+  ) : state.sistemas;
+
+  container.innerHTML = sistemasFiltrados.map(s => {
+    const sistMatch = filterText && s.name.toLowerCase().includes(filterText);
+    const inicsFiltradas = filterText ? s.iniciativas.filter(i =>
+      sistMatch ||
+      i.name.toLowerCase().includes(filterText) ||
+      i.tasks.some(t => taskMatchesFilter(t))
+    ) : s.iniciativas;
+    const allS = inicsFiltradas.flatMap(i => i.tasks);
     const openTasks = allS.filter(t => t.status !== 'hecho').length;
-    const inicHtml = s.iniciativas.map(i => {
+    const inicHtml = inicsFiltradas.map(i => {
       const counts = { pendiente: 0, 'en-curso': 0, bloqueado: 0, hecho: 0 };
       i.tasks.forEach(t => { if (counts[t.status] !== undefined) counts[t.status]++; });
       const statsHtml = Object.entries(counts).filter(([,v]) => v > 0)
         .map(([k,v]) => `<span class="status ${k}" style="font-size:10px">${v} ${statusLabel(k)}</span>`).join('');
-      const tasksHtml = i.tasks.length === 0
+      const inicMatch = filterText && (sistMatch || i.name.toLowerCase().includes(filterText));
+      const visibleTasks = (filterText && !inicMatch) ? i.tasks.filter(t => taskMatchesFilter(t)) : i.tasks;
+      const tasksHtml = visibleTasks.length === 0
         ? '<div class="empty-inicia">Sin tareas aún</div>'
-        : i.tasks.map(t => `
+        : visibleTasks.map(t => `
           <div class="task-row" id="trow-${s.id}-${i.id}-${t.id}">
             <div class="task-main">
               <span class="task-desc ${t.status === 'hecho' ? 'hecho' : ''}">${escHtml(t.desc)}</span>
@@ -367,6 +414,7 @@ function renderAll() {
         <div class="inicia-block">
           <div class="inicia-header" onclick="toggleIniciativa('${escHtml(s.id)}','${escHtml(i.id)}')">
             <span class="inicia-label">${escHtml(i.name)}</span>
+            <button class="rename-btn" onclick="renameIniciativa('${escHtml(s.id)}','${escHtml(i.id)}',event)" title="Renombrar">✏</button>
             <div class="inicia-stats">${statsHtml}</div>
             <span class="inicia-toggle">${i.open ? '▲' : '▼'}</span>
           </div>
@@ -380,6 +428,7 @@ function renderAll() {
       <div class="sistema-block">
         <div class="sistema-header" onclick="toggleSistema('${escHtml(s.id)}')">
           <span class="sistema-name">${escHtml(s.name)}</span>
+          <button class="rename-btn" onclick="renameSistema('${escHtml(s.id)}',event)" title="Renombrar">✏</button>
           <span class="sistema-count">${openTasks} abiertas / ${allS.length} total</span>
           <span class="sistema-toggle ${s.open ? 'open' : ''}">▼</span>
         </div>
@@ -511,6 +560,31 @@ function toggleIniciativa(sistId, inicId) {
 function toggleSistema(sistId) {
   const sist = state.sistemas.find(s => s.id === sistId);
   writeData(pSist(sistId), { open: !sist.open });
+}
+
+async function renameSistema(sistId, evt) {
+  evt.stopPropagation();
+  const sist = state.sistemas.find(s => s.id === sistId);
+  const name = prompt('Nuevo nombre del sistema:', sist.name);
+  if (!name?.trim() || name.trim() === sist.name) return;
+  startSaving();
+  try {
+    await db.ref(pSist(sistId) + '/name').set(name.trim());
+    doneSaving();
+  } catch(e) { doneSaving(); showToast('Error: ' + e.message, true); }
+}
+
+async function renameIniciativa(sistId, inicId, evt) {
+  evt.stopPropagation();
+  const sist = state.sistemas.find(s => s.id === sistId);
+  const inic = sist.iniciativas.find(i => i.id === inicId);
+  const name = prompt('Nuevo nombre de la iniciativa:', inic.name);
+  if (!name?.trim() || name.trim() === inic.name) return;
+  startSaving();
+  try {
+    await db.ref(pInic(sistId, inicId) + '/name').set(name.trim());
+    doneSaving();
+  } catch(e) { doneSaving(); showToast('Error: ' + e.message, true); }
 }
 
 function showAddTask(sistId, inicId) {
@@ -647,6 +721,19 @@ document.getElementById('project-name').addEventListener('click', () => {
   }
   input.addEventListener('blur', finish);
   input.addEventListener('keydown', e => { if (e.key === 'Enter') finish(); if (e.key === 'Escape') { input.value = current; finish(); } });
+});
+
+document.getElementById('search-input').addEventListener('input', e => {
+  filterText = e.target.value.trim().toLowerCase();
+  document.getElementById('search-clear').style.display = filterText ? 'block' : 'none';
+  renderAll();
+});
+
+document.getElementById('search-clear').addEventListener('click', () => {
+  document.getElementById('search-input').value = '';
+  filterText = '';
+  document.getElementById('search-clear').style.display = 'none';
+  renderAll();
 });
 
 document.getElementById('back-btn').addEventListener('click', () => {
